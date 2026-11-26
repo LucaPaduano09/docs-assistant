@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Permessi minimi: questo workflow deve solo leggere il codice
+permissions:
+  contents: read
+
+# Un nuovo push sulla stessa PR annulla il run precedente
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # storia git completa: serve a --affected
+
+      - uses: pnpm/action-setup@v4 # legge la versione da "packageManager"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm # cache dei pacchetti scaricati
+
+      - uses: actions/cache@v4 # cache di Turborepo tra un run e l'altro
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm turbo run lint typecheck build ${{ github.event_name == 'pull_request' && '--affected' || '' }}
