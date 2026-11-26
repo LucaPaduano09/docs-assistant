@@ -1,0 +1,14 @@
+{
+    "$schema": "https://turborepo.com/schema.json",
+    "tasks": {
+        "build": {
+            //prima il build dei pacchetti da cui dipendo
+            "dependsOn": ["^build"],
+            "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+        },
+        "lint": {},
+        "typecheck": {"dependsOn": ["^build"]},
+        "dev": {"cache": false, "persistent": true}
+    }
+}
+ 
